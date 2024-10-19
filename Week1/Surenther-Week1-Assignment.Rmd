@@ -1,0 +1,42 @@
+---
+title: "Week1 - Assignment"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+## Discovering Statistics Using R– Task4
+
+### Question:
+Say I own 857 CDs. My friend has written a computer program that uses a webcam to scan my shelves in my house where I keep my CDs and measure how many I have. His program says that I have 863 CDs. Define measurement error. What is the measurement error in my friend’s CD counting device?
+
+### Answer:
+From the book, Measurement Error is described as the discrepancy between the actual value and the value obtained through measurement. In this example, the actual number of CDs is stated as 857, but the computer program recorded it as 863. This difference of 6 CDs represents a measurement error.
+
+```{r}
+m_error = 863 - 857
+m_error
+```
+## Discovering Statistics Using R– Task5
+
+### Question:
+Sketch the shape of a normal distribution, a positively skewed distribution and a negatively skewed distribution.
+
+### Normal Distribution:
+```{r}
+curve(dnorm(x, 0, 1), from=-4, to=4)
+```
+
+### Positive Distribution:
+```{r}
+curve(dnorm(x, 2, 1), from=1, to=7)
+```
+
+### Negative Distribution:
+```{r}
+curve(dbeta(x, 10, 2), from=0, to=1)
+```
+
+

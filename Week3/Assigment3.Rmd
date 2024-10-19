@@ -1,0 +1,132 @@
+---
+title: "Assingment 3"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Import CSV
+```{r}
+# Import CSV
+c_data <- read.table(file = "acs-14-1yr-s0201.csv", header = TRUE, sep = ",")
+```
+
+### Field & Data Type
+```{r}
+# Creating vectors
+field <- c("Id","Id2","Geography","PopGroupID","POPGROUP.display.label","RacesReported","HSDegree","BachDegree")
+type <- c("varchar","numeric","character","numeric","character","numeric","numeric","numeric")
+intent <- c("Unique Identifier of each row","Numeric version of ID. Anonther unique Identifier","County Name","unique identifier of measures","Name of the measures (Population)","Population value","Percentage of Highschool passout","Percentage of Bachelor degree")
+# Creating data frames
+dt <- data.frame(Field=field,Type=type,Intent=intent)
+# Library for converting into Tables
+library(kableExtra)
+# Converting into Table
+dt %>% kbl() %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+### Functions Output
+```{r}
+#Str output
+str(c_data)
+#nrow output
+nrow(c_data)
+#ncol output
+ncol(c_data)
+```
+
+### Histogram
+```{r}
+#Load ggplot2
+library(ggplot2)
+#Create basic ggplot
+basic <- ggplot(c_data,aes(x=HSDegree))
+#Add histogram
+hist <- basic + geom_histogram(color=4,fill="white", bins = 50) 
+#Add title and axis lable
+title <- hist + ggtitle("Distribusion of High School Degree") + labs(y = "Count", x = "HS Degree") 
+#Add theme
+graph <- title + theme_minimal()
+#Display 
+graph
+```
+
+### Histogram Questions
+1. Is the data distribution unimodal? \
+No, this distribution is not unimodal. It exhibits multiple peaks within the 85% to 95% range.
+
+2. Is it approximately symmetrical? \
+No, the distribution is not approximately symmetrical. The graph shows a right skew, where most of the data is concentrated between 85% and 95%.
+
+3. Is it approximately bell-shaped? \
+No, the distribution is not approximately bell-shaped. A bell-shaped distribution is symmetric and has a single peak, resembling a normal distribution. In this case, the distribution has multiple peaks.
+
+4. Is it approximately normal? \
+No, the distribution is not approximately normal. A normal distribution is symmetric, bell-shaped, and has a single peak in the center, with data tapering off equally on both sides.
+
+5. If not normal, is the distribution skewed? If so, in which direction? \
+Yes, the distribution is skewed to the left. This means most of the data is on the higher end (around 85% to 95%), while the lower end has fewer values, creating a longer tail on the left side.
+
+6. Include a normal curve to the Histogram that you plotted.
+```{r}
+#Load ggplot2
+library(ggplot2)
+#Create basic ggplot
+basic <- ggplot(c_data,aes(x=HSDegree))
+#Add histogram with density
+hist <- basic + geom_histogram(aes(y = after_stat(density)),color=4,fill="white", bins = 50)
+# Add normal distribution line
+line <- hist + stat_function(fun = dnorm, args = list(mean = mean(c_data$HSDegree), sd = sd(c_data$HSDegree)), color = "red", linewidth = 1)
+#Add title and axis label
+title <- line + ggtitle("Distribusion of High School Degree with normal curve") + labs(y = "Density", x = "HS Degree") 
+#Add theme
+graph <- title + theme_minimal()
+#Display 
+graph
+```
+
+7. Explain whether a normal distribution can accurately be used as a model for this data. \
+Based on the histogram with the normal curve overlay, it appears that the data is not perfectly normal, which means a normal distribution may not be the best model for this data.
+
+### Probability Plot
+```{r}
+# Load ggplot2
+library(ggplot2)
+# Create basic ggplot
+basic <- ggplot(c_data,aes(sample=HSDegree))
+# Q-Q plot
+qq <- basic + stat_qq()
+# Reference line
+line <- qq + stat_qq_line(color = "red")
+#Add title and axis label
+title <- line + ggtitle("Probability Plot") + labs(y = "HS Degree", x = "")
+#Add theme
+graph <- title + theme_minimal()
+#Display 
+graph
+```
+
+### Probability Plot Questions
+1. Based on what you see in this probability plot, is the distribution approximately normal? Explain how you know. \
+Based on the probability plot, the distribution does not appear to be perfectly normal. In a normal distribution, the data points would closely follow the straight red line. Here, the points deviate from the line at the lower and upper ends
+
+2. If not normal, is the distribution skewed? If so, in which direction? Explain how you know. \
+The distribution appears to be right-skewed.
+
+### stat.desc() 
+```{r}
+#Load pastecs
+library(pastecs)
+stat.desc(c_data[c('RacesReported','HSDegree','BachDegree')], basic=TRUE, desc=TRUE, norm=FALSE, p=0.95)
+```
+
+### skew, kurtosis, and z-scores
+Skew: Skewness measures how much the data is asymmetrical. A positive skew means more data points are concentrated on the left with a long tail on the right. A negative skew means the opposite.
+
+Kurtosis: Kurtosis tells us about the "peakedness" of the data. High kurtosis means more data is in the tails (extreme values), while low kurtosis means fewer extreme values.
+
+Z-scores: Z-scores show how far each data point is from the mean in terms of standard deviations. A z-score of 2 means the point is 2 standard deviations away from the mean.
+
+Sample size impact: With a larger sample size, results for skewness, kurtosis, and z-scores become more reliable. Small samples can lead to random variation, making the data appear more skewed or have higher kurtosis than it truly is.

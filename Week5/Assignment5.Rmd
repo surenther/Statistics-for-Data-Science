@@ -1,0 +1,151 @@
+---
+title: "Assignment 5"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Load XLSX file
+```{r}
+#Load XLSX
+library(readxl)
+mydata <- read_excel("week-6-housing.xlsx", 1)
+```
+
+## Dplyr Functions
+
+### Mutate - Create Year column
+```{r}
+#Extract the Year column from the Date and Create a new column
+library(magrittr) #Library for Pipes
+library(dplyr,warn.conflicts = FALSE) 
+mydata2 <- mydata
+mydata2 %<>%
+  select('Sale Date','Sale Price','zip5','square_feet_total_living','bedrooms') %>%
+  mutate('Sale Year' = format(mydata$'Sale Date','%Y'))
+print(mydata2,width=Inf,n=5)
+```
+
+### Summarize - Avg Sale Price, Avg Sqft, Avg Bedroom
+```{r}
+#Calculate Avg Saleprice, SQFT and Bedroom
+mydata2 %>%
+  summarize_at(
+   vars(AvgSalePrice="Sale Price",AvgSqft="square_feet_total_living",  
+        AvgBedroom="bedrooms"),mean, na.rm = TRUE
+   )
+```
+
+### Group by - Yearsold, Zip
+```{r}
+#Group by Year,Zip & Calculate Avg Saleprice, SQFT and Bedroom
+mydata2 %>%
+  group_by( 
+    Year = mydata2$'Sale Year',Zip = mydata2$'zip5'
+    ) %>% 
+  summarize_at(
+    vars(AvgSalePrice="Sale Price",AvgSqft="square_feet_total_living",  
+         AvgBedroom="bedrooms"),mean, na.rm = TRUE
+    )
+```
+
+### Select - Sale Date, Sale Price, Zip & Square Footage
+```{r}
+#Select Sale data, Sale Price, Zip and Square feet
+mydata %>%
+  select('Sale Date','Sale Price','zip5','square_feet_total_living')
+```
+
+### Filter - based on Sale Year and Price and Sqft
+```{r}
+#Find home with more than 3500sqft with less than 650k sold at 2016
+mydata2 %>%
+  print(filter(mydata2$'Sale Year' == "2016" & mydata2$'Sale Price' <= 650000  
+               & mydata2$'square_feet_total_living' > 3500),width=Inf,n=5)
+```
+
+### Arrange - by Avg Saleprice in desc
+```{r}
+#Group by Year,Zip & Calculate Avg Saleprice, SQFT and Bedroom, Display by Avg Saleprice 
+mydata2 %>%
+  group_by( 
+    Year = mydata2$'Sale Year',Zip = mydata2$'zip5'
+    ) %>% 
+  summarize_at(
+    vars(AvgSalePrice="Sale Price",AvgSqft="square_feet_total_living",  
+         AvgBedroom="bedrooms"),mean, na.rm = TRUE
+    ) %>%
+  arrange(desc(AvgSalePrice))
+```
+
+## purrr Functions
+### keep - Only Numeric Columns 
+```{r}
+library(purrr,warn.conflicts = FALSE)
+numeric_data <- keep(mydata, is.numeric)
+numeric_data
+```
+Findings: It removed non numeric columns like Sale Date,addr_full,ctyname etc
+
+### discard - Remove Colunmn with NA
+```{r}
+cleaned_data <- discard(mydata, ~ any(is.na(.)))
+cleaned_data
+```
+Findings: It removed columns like sale_warning,ctyname which is having missing value
+
+### compact - Remove NULL values from the data
+```{r}
+clean_without_null <- compact(mydata)
+clean_without_null
+```
+
+## Cbind - Column Bind
+```{r}
+# Extract Home details from the data
+home_details <- 
+  mydata %>%
+  select(year_built,square_feet_total_living,bedrooms)
+# Extract Sale details from the data
+sale_detail <-
+  mydata %>%
+  select('Sale Date','Sale Price',sale_reason)
+#Cbind
+c_merge <- cbind(home_details,sale_detail)
+head(c_merge,n=5)
+```
+
+## Rbind - Row Bind
+```{r}
+#2006 Sale details
+sale_2006 <-
+  mydata2 %>%
+  filter(mydata2$'Sale Year' == "2006")
+#2016 Sale details
+sale_2016 <-
+  mydata2 %>%
+  filter(mydata2$'Sale Year' == "2016")
+#Rbind
+r_merge <- rbind(sale_2006,sale_2016)
+head(r_merge,n=5)
+```
+
+## Split- Extract house no & Street name from address
+```{r}
+library(stringr)
+#Split the full address based on first space
+mydata[c('Home_No', 'Street Name')]  <- str_split_fixed(string=mydata$addr_full,  
+                                                        pattern=" ",2)
+#display the data
+mydata %>% select(addr_full,Home_No,'Street Name')
+```
+
+## concatenate - address with proper format 
+```{r}
+mydata %>%
+  mutate('modified_addr' = sprintf("%s,%s %s-%s",mydata$Home_No,mydata$'Street Name',  
+                                   mydata$postalctyn,mydata$zip5)) %>%
+  select(addr_full,modified_addr)
+```

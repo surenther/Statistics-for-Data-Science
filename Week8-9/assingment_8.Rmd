@@ -1,0 +1,87 @@
+---
+title: "Assignment 8"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Load XLSX file
+```{r}
+#Load XLSX
+library(readxl)
+mydata <- read_excel("week-6-housing.xlsx", 1)
+```
+
+### Data Cleanup
+```{r}
+library(dplyr,warn.conflicts = FALSE)
+# Remove unwanted Columns
+housing_data <- select(mydata,-c(sale_reason,sale_instrument,sale_warning,sitetype, 
+                                 ctyname,present_use))
+```
+__Explanation__ \
+_The columns such as Sale Reason, Sale Instrument, Sale Warning, and Present Use contain references without any accompanying explanation, making their inclusion unclear. Additionally, columns like Sitetype and City Name are duplicates of Postalcty and Prop Type, respectively. Therefore, these columns have been removed for clarity and to avoid redundancy._
+
+```{r}
+# Rename Columns
+housing_data <- rename(housing_data,c(sale_date='Sale Date',sale_price='Sale Price', 
+                      address=addr_full,zip=zip5,city=postalctyn,longtitude=lon, 
+                      lattitude=lat))
+```
+__Explanation__ \
+_Rename the columns by converting all characters to lowercase and assigning more meaningful names for clarity and consistency._
+
+```{r}
+# Add Year Column
+housing_data <- housing_data %>% 
+  mutate('sale_year' = format(housing_data$'sale_date','%Y'))
+```
+__Explanation__ \
+_A new "year" column was generated from the sale date to facilitate year-based calculations._
+
+### Linear regression model 
+```{r}
+#Identify Relationship between Sale Price and Sq_ft
+library("ggplot2")                     
+library("GGally")
+ggpairs(housing_data[,c(2,9)], title="Housing Data")
+```
+__Findings__\
+_While a relationship exists between square footage and sale price, the correlation coefficient of 0.455 suggests a relatively weak association._
+
+```{r}
+#Linear Regression Model
+lm_sale_sqft <- lm(sale_price ~ square_feet_total_living, data = housing_data)
+#Summary of Lm
+summary(lm_sale_sqft)
+```
+__Findings__\
+**_Coefficients_**\
+_(Intercept): This is the predicted sale_price when square_feet_total_living is 0. In this case, it's $189,100._ \
+
+_square_feet_total_living: This represents the change in sale_price for every one-unit increase in square_feet_total_living. So, for each additional square foot of living area, the sale_price increases by $185.70. Both coefficients are statistically significant (indicated by the Pr(>|t|) values being much smaller than 0.05)._ \
+
+**_Model Fit_**\
+_Residual standard error: This is the average distance between the actual sale_price and the predicted sale_price by the model. In this case, it's $360,200._ \
+
+_Multiple R-squared: This measures the proportion of variance in sale_price explained by the model. Here, it's 0.2066, meaning that about 20.66% of the variation in sale_price can be explained by square_feet_total_living._ \
+
+_Adjusted R-squared: This is a similar metric to R-squared but penalizes for the number of predictors in the model. In this case, it's also 0.2066, indicating that adding more predictors might not significantly improve the model's fit._ \
+
+_F-statistic and p-value: These test the overall significance of the model. A p-value of less than 0.05 suggests that the model is statistically significant, meaning that at least one predictor (in this case, square_feet_total_living) is significantly related to the sale_price._ \
+
+
+**_In Summary_**\
+_The model indicates that there is a significant positive relationship between sale_price and square_feet_total_living. However, only about 20% of the variation in sale_price can be explained by this variable. This suggests that other factors may also influence the sale_price._
+
+### Residuals
+```{r}
+ggplot(data=housing_data, aes(lm_sale_sqft$residuals)) +
+geom_histogram(binwidth = 10, color = "black", fill = "purple4") +
+theme(panel.background = element_rect(fill = "white"),
+axis.line.x=element_line(),
+axis.line.y=element_line()) +
+ggtitle("Histogram for Model Residuals")
+```

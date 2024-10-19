@@ -1,0 +1,86 @@
+---
+title: "Week2-Assignment1"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+# Basics
+### Addition
+```{r}
+# Add 8 and 5
+8+5
+```
+### Subtraction
+```{r}
+# Subtract 6 from 22
+22-6
+```
+### Multiplication
+```{r}
+# Multiply 6 by 7
+6*7
+```
+### Division
+```{r}
+# Add 4 to 6 and divide the result by 2
+(4+6)/2
+```
+### Modulo
+```{r}
+# Compute 5 modulo 2
+5 %% 2
+```
+
+### Variable Assignment
+```{r}
+# Assign the value 82 to the variable x
+x <- 82
+#Print x
+x
+```
+### Variable Assignment
+```{r}
+# Assign the value 41 to the variable y
+y <- 41
+#Print y
+y
+```
+
+### Variable Addition
+```{r}
+# Assign the output of x + y to the variable z
+z <- x + y
+#Print z
+z
+```
+
+### String Variable
+```{r}
+# Assign the string value "DSC520" to the variable class_name
+class_name <- "DSC520"
+# Print the value of class_name
+class_name
+```
+
+### Logical Variable
+```{r}
+# Assign the string value of TRUE to the variable is_good
+is_good <- TRUE
+# Print the value of class_name
+is_good
+```
+
+### Class Check
+```{r}
+# Check the class of the variable is_good using the `class()` function
+class(is_good)
+# Check the class of the variable z using the `class()` function
+class(z)
+# Check the class of the variable class_name using the class() function
+class(class_name)
+```
+
+
+

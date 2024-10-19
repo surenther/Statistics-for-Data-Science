@@ -1,0 +1,103 @@
+---
+title: "Assingment 7"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+### Import CSV
+```{r}
+# Import CSV
+c_data <- read.table(file = "student-survey.csv", header = TRUE, sep = ",")
+```
+
+### Plots
+```{r warning=FALSE, message=FALSE}
+# Load ggplot2
+library(ggplot2)
+
+# Plot 1: TimeReading vs TimeTV
+ggplot(c_data,aes(x = TimeReading, y = TimeTV)) + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "TimeReading vs TimeTV", x = "TimeReading", y = "TimeTV") +
+  theme_minimal()
+
+# Plot 2: TimeReading vs Happiness
+ggplot(c_data,aes(x = TimeReading, y = Happiness)) + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, color = "green") +  
+  labs(title = "TimeReading vs Happiness", x = "TimeReading", y = "Happiness") +
+  theme_minimal()
+
+# Plot 3: TimeTV vs Happiness
+ggplot(c_data,aes(x = TimeTV, y = Happiness)) + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, color = "red") +  
+  labs(title = "TimeTV vs Happiness", x = "TimeTV", y = "Happiness") +
+  theme_minimal()
+```
+\
+__Findings__ \
+1. __TimeReading vs TimeTV:__ Indicates a Negative relationship, as the more time spent reading decreases the time watching TV. \
+2. __TimeReading vs Happiness:__ The trend seems mixed, but there might be a weak negative relationship overall. \
+3. __TimeTV vs Happiness:__ There's a Positive correlation; as time watching TV increases, happiness tends to increase. \
+
+```{r, echo=FALSE,warning=FALSE, message=FALSE}
+# Create the dataset
+data <- data.frame(
+  TimeReading = c(c_data$TimeReading),
+  TimeTV = c(c_data$TimeTV),
+  Happiness = c(c_data$Happiness)
+)
+# Library for visual
+library(corrplot)
+```
+
+### Covariance Matrix
+```{r}
+#Create the correlation matrix
+cov_matrix <- cov(data)
+print(cov_matrix)
+```
+__Findings__ \
+__Diagonal Values__ : These are the variances of the individual variables
+
+* TimeReading : 3.05
+* TimeTV : 174.09
+* Happiness : 185.45
+
+__Off-diagonal values__: These represent the covariances between pairs of variables \
+1. __Covariance between TimeReading and TimeTV__ is -20.36, which indicates negative relationship (as reading time increases, TV time decreases) \
+2. __Covariance between TimeReading and Happiness__ is -10.35, which indicates negative relationship (as reading time increases, happiness decreases) \
+3. __Covariance between TimeTV and Happiness__ is 114.377, which indicated positive relationship (as TV time increase, Happiness increases as well) \
+
+### Correlation Matrix
+```{r}
+# Create the correlation matrix
+cor_matrix <- cor(data)
+print(cor_matrix)
+
+#Visualizing Correlation Matrix
+corrplot(cor_matrix)
+```
+\
+__Findings__ \
+1. __TimeReading vs TimeTV__: The correlation between time spent reading and watching TV is -0.883, indicating a strong negative relationship. As reading time increases, TV time tends to decrease significantly. \
+2. __TimeReading vs Happiness:__ The correlation between reading time and happiness is -0.43, suggesting a slight negative relationship. While there is some trend, it is not strongly negative, indicating mixed results. \
+3. __TimeTV vs Happiness:__ The correlation between TV time and happiness is 0.63, reflecting a moderately positive relationship. More time spent watching TV is associated with an increase in happiness. \
+
+### Covarience vs Correlation Matrix
+Correlation Matrix is easier to interpret because it gives standardized values between -1 and 1, making it easy to understand the strength and direction of relationships between variables. Covariance Matrix provides raw co-variation, the varying scales make it harder to interpret. Thus, correlation is generally more user-friendly for understanding relationships.
+
+### Correlation Test
+```{r}
+# Perform correlation test
+cor_test_result <- cor.test(data$TimeReading, data$TimeTV,method="pearson")
+print(cor_test_result)
+```
+__Findings__ \
+1. __Correlation Coefficient (cor = -0.883):__ This value indicates a strong negative correlation between TimeReading and TimeTV. As the time spent on reading increases, the time spent watching TV tends to decrease significantly.\
+2. __p-value = 0.0003153:__ Since the p-value is much smaller than 0.05, the correlation is statistically significant. This means there's strong evidence that the relationship between TimeReading and TimeTV is not due to random chance.\
+3. __Confidence Interval (-0.969 to -0.602):__ The 95% confidence interval for the correlation is quite narrow and does not include 0, further confirming a strong negative relationship.\
+
+Based on the correlation test, while TimeReading and TimeTV have a strong negative correlation (meaning as reading time increases, TV time decreases), this does not imply causality. Correlation alone shows a relationship but cannot confirm an effect or direction of influence between the variables.
+
