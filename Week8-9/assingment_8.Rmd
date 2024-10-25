@@ -3,8 +3,8 @@ title: "Assignment 8"
 author: "Surenther"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ### Load XLSX file
@@ -41,47 +41,175 @@ housing_data <- housing_data %>%
 __Explanation__ \
 _A new "year" column was generated from the sale date to facilitate year-based calculations._
 
-### Linear regression model 
+### Correalation with Square feet
 ```{r}
 #Identify Relationship between Sale Price and Sq_ft
 library("ggplot2")                     
 library("GGally")
-ggpairs(housing_data[,c(2,9)], title="Housing Data")
+ggpairs(housing_data[,c(2,17)], title="Housing Data")
 ```
 __Findings__\
-_While a relationship exists between square footage and sale price, the correlation coefficient of 0.455 suggests a relatively weak association._
+_The size of the lot (sq_ft_lot) is positively correlated with the sale price, but the relationship is relatively weak. This suggests that other factors besides lot size might be more significant determinants of the sale price._ \
 
+_The right-skewed distribution of sale_price indicates that there are a few high-priced houses that are pulling the average sale price up. This could be due to other factors._ \
+
+### Linear Regression Model with Sq_ft_lot (Model1)
 ```{r}
 #Linear Regression Model
-lm_sale_sqft <- lm(sale_price ~ square_feet_total_living, data = housing_data)
+lm_sale_sqft <- lm(sale_price ~ sq_ft_lot, data = housing_data)
 #Summary of Lm
 summary(lm_sale_sqft)
 ```
 __Findings__\
-**_Coefficients_**\
-_(Intercept): This is the predicted sale_price when square_feet_total_living is 0. In this case, it's $189,100._ \
+**_Coefficients_** \
+_(Intercept): This is the predicted sale_price when sq_ft_lot is 0. In this case, it's $641,800._ \
 
-_square_feet_total_living: This represents the change in sale_price for every one-unit increase in square_feet_total_living. So, for each additional square foot of living area, the sale_price increases by $185.70. Both coefficients are statistically significant (indicated by the Pr(>|t|) values being much smaller than 0.05)._ \
+_sq_ft_lot: This represents the change in sale_price for every one-unit increase in sq_ft_lot. So, for each additional square foot of lot size, the sale_price increases by $0.851. Both coefficients are statistically significant (indicated by the Pr(>|t|) values being much smaller than 0.05)._ \
 
 **_Model Fit_**\
-_Residual standard error: This is the average distance between the actual sale_price and the predicted sale_price by the model. In this case, it's $360,200._ \
+_Residual standard error: This is the average distance between the actual sale_price and the predicted sale_price by the model. In this case, it's $401,500._ \
 
-_Multiple R-squared: This measures the proportion of variance in sale_price explained by the model. Here, it's 0.2066, meaning that about 20.66% of the variation in sale_price can be explained by square_feet_total_living._ \
+_Multiple R-squared: This measures the proportion of variance in sale_price explained by the model. Here, it's 0.01435, meaning that only about 1.435% of the variation in sale_price can be explained by sq_ft_lot._ \
 
-_Adjusted R-squared: This is a similar metric to R-squared but penalizes for the number of predictors in the model. In this case, it's also 0.2066, indicating that adding more predictors might not significantly improve the model's fit._ \
+_Adjusted R-squared: This is a similar metric to R-squared but penalizes for the number of predictors in the model. In this case, it's 0.01428, indicating that adding more predictors might not significantly improve the model's fit._ \
 
-_F-statistic and p-value: These test the overall significance of the model. A p-value of less than 0.05 suggests that the model is statistically significant, meaning that at least one predictor (in this case, square_feet_total_living) is significantly related to the sale_price._ \
-
+_F-statistic and p-value: These test the overall significance of the model. A p-value of less than 0.05 suggests that the model is statistically significant, meaning that at least one predictor (in this case, sq_ft_lot) is significantly related to the sale_price._ \
 
 **_In Summary_**\
-_The model indicates that there is a significant positive relationship between sale_price and square_feet_total_living. However, only about 20% of the variation in sale_price can be explained by this variable. This suggests that other factors may also influence the sale_price._
 
-### Residuals
+_The model indicates that there is a significant positive relationship between sale_price and sq_ft_lot. However, only a very small portion of the variation in sale_price can be explained by this variable. This suggests that other factors may also influence the sale_price much more significantly._ \
+
+### Residuals for Model 1
 ```{r}
 ggplot(data=housing_data, aes(lm_sale_sqft$residuals)) +
 geom_histogram(binwidth = 10, color = "black", fill = "purple4") +
 theme(panel.background = element_rect(fill = "white"),
 axis.line.x=element_line(),
 axis.line.y=element_line()) +
-ggtitle("Histogram for Model Residuals")
+ggtitle("Histogram for Model1 Residuals")
 ```
+__Findings__\
+_Central Tendency: The majority of residuals are clustered around 0, indicating that the model's predictions are generally accurate for most data points._ \
+_Skewness: There's a slight right-skewness, indicating that there are a few larger positive residuals._ \
+_Outliers: There appear to be some outliers, particularly on the right side of the histogram._ \
+
+### Residuals QQ Plot for  Model 1
+```{r}
+qqnorm(lm_sale_sqft$residuals)
+qqline(lm_sale_sqft$residuals, col = "red")
+```
+__Findings__\
+_Deviation from Normality: The points in the QQ plot deviate from the red line (representing the normal distribution) in the tails, especially in the upper tail. This suggests that the residuals are not normally distributed._ \
+
+### Finding Correlation with other
+```{r}
+#Identify Relationship between Sale Price and other
+ggpairs(housing_data[,c(2,9,10,11,12,13,14)], title="Housing Data")
+```
+__Findings__\
+_Based on the analysis, we have identified significant relationships between sale_price and the following variables: square_feet_total_living, bedrooms, bath_full_count, and year_built. However, bath_half_count and bath_3qtr_count appear to have negligible or no impact on sale_price. For our subsequent modeling efforts, we will focus on the variables that have demonstrated a meaningful association with the target variable._
+
+### Linear regression model with multiple varaibles (Model 2)
+__Explanation__ \
+_Although our preliminary analysis revealed a positive correlation between lot size and sale price, the correlation coefficient indicates a moderate association. This suggests that other factors significantly contribute to housing prices. To explore these additional influences, we will construct a regression model incorporating variables such as the number of bedrooms, full bathrooms, overall living area, and property age. This expanded model aims to provide a more comprehensive understanding of the factors driving sale prices._
+
+```{r}
+#Linear Regression Model
+lm_sale_multiple <- lm(sale_price ~ square_feet_total_living + bedrooms + bath_full_count  
+                       + year_built, data = housing_data)
+#Summary of Lm
+summary(lm_sale_multiple)
+```
+
+__Findings__  \
+**_Coefficients_**  \
+_(Intercept): This is the predicted sale_price when all predictor variables are 0. In this case, it's --$4,430,000. However, interpreting this intercept directly might not be meaningful, as it's unlikely to have a practical interpretation._ \
+    
+_square_feet_total_living, bedrooms, bath_full_count, year_built: These coefficients represent the change in sale_price for every one-unit increase in the corresponding predictor variable, holding all other variables constant.For example, for each additional square foot of living area (square_feet_total_living), the sale_price increases by $174.40_
+
+**_Model Fit_**\
+_Residual standard error: This is the average distance between the actual sale_price and the predicted sale_price by the model. In this case, it's $357,300._ \
+
+_Multiple R-squared: This measures the proportion of variance in sale_price explained by the model. Here, it's 0.2194, meaning that about 21.94% of the variation in sale_price can be explained by the combined effect of the predictor variables._ \
+
+_Adjusted R-squared: This is a similar metric to R-squared but penalizes for the number of predictors in the model. In this case, it's 0.2194, indicating that adding more predictors might not significantly improve the model's fit._ \
+
+_F-statistic and p-value: These test the overall significance of the model. A p-value of less than 0.05 suggests that the model is statistically significant, meaning that at least one predictor is significantly related to the sale_price._ \
+
+**_In Summary_** \
+
+_The model indicates that all predictor variables are significantly related to sale_price, with square_feet_total_living and year_built having the strongest effects._
+
+### Residuals for Model 2
+```{r}
+ggplot(data=housing_data, aes(lm_sale_multiple$residuals)) +
+geom_histogram(binwidth = 10, color = "black", fill = "purple4") +
+theme(panel.background = element_rect(fill = "white"),
+axis.line.x=element_line(),
+axis.line.y=element_line()) +
+ggtitle("Histogram for Model2 Residuals")
+```
+__Findings__\
+_Central Tendency: A large number of residuals are clustered around 0.0000E+00, which is a positive sign as it indicates that the model's predictions are accurate for many data points._ \
+_Skewness: The histogram is slightly skewed to the right, suggesting that there are a few larger positive residuals._ \
+_Outliers: There appear to be some outliers, particularly on the right side of the histogram._ \
+
+### Residuals QQ Plot for  Model 2
+```{r}
+qqnorm(lm_sale_multiple$residuals)
+qqline(lm_sale_multiple$residuals, col = "red")
+```
+__Findings__
+_Deviation from Normality: The points in the QQ plot deviate from the red line (representing the normal distribution) in the tails, especially in the upper tail. This suggests that the residuals are not normally distributed._
+
+### Comparision between Model 1 and Model 2
+__Model 1:__ \
+    _Formula: sale_price ~ sq_ft_lot_ \
+    _Residual Standard Error (RSE): 401,500_ \
+    _Multiple R-squared: 0.01435_ \
+    _Adjusted R-squared: 0.01428_ \
+    _F-statistic: 187.3 (p-value < 2.2e-16)_ \
+
+__Model 2:__ \
+    _Formula: sale_price ~ square_feet_total_living + bedrooms + bath_full_count + year_built_ \
+    _Residual Standard Error (RSE): 357,300_ \
+    _Multiple R-squared: 0.2194_ \
+    _Adjusted R-squared: 0.2192_ \
+    _F-statistic: 903.7 (p-value < 2.2e-16)_ \
+
+__Findings:__ \
+_R-Squared and Adjusted R-Squared: Model 1 has a very low R-squared value of 0.01435, meaning that only 1.4% of the variance in sale_price is explained by sq_ft_lot. Model 2 shows a significant improvement, with an R-squared of 0.2194, meaning 21.9% of the variance in sale_price is explained by the four predictors: square_feet_total_living, bedrooms, bath_full_count, and year_built. The increase in adjusted R-squared from 0.01428 (Model 1) to 0.2192 (Model 2) suggests that Model 2 better fits the data, even after accounting for the number of predictors._
+
+_Residual Standard Error (RSE): The residual error decreased from 401,500 in Model 1 to 357,300 in Model 2, indicating that Model 2 produces more accurate predictions (lower spread of residuals)._
+
+_F-statistic: The F-statistic in Model 1 is 187.3, whereas in Model 2, it jumps to 903.7, with a p-value < 2.2e-16 in both cases. This suggests that Model 2 is significantly better than Model 1 in explaining the variance in sale_price._  
+
+### Anova Comparision
+```{r}
+anova(lm_sale_sqft,lm_sale_multiple)
+```
+__Findings__ \
+_F-statistic (1126): This value is significantly large, indicating that the additional predictors in Model 2 (compared to Model 1) significantly improve the model's fit._ \
+_p-value (< 2.2e-16): The p-value is very small, confirming that the improvement in Model 2 is statistically significant at a very high level of confidence._ \
+
+_The ANOVA results strongly suggest that the second model, which includes additional predictors, is a significantly better fit to the data compared to the first model. This implies that the inclusion of square_feet_total_living, bedrooms, bath_full_count, and year_built provides a more comprehensive explanation of the variation in sale_price._
+
+### Residual Normality Comparision
+_Both models show signs of non-normal residuals and potential bias due to this deviation from normality.This suggests that the assumptions of normality for the residuals are violated in both models.This non-normality might imply that the models are missing some key features or interactions, or that transformations (e.g., log-transformation) may be necessary to address skewness and improve the fit of the model._
+
+### RMSE for Model 1
+```{r}
+library(Metrics)
+pre_model1 <- predict(object=lm_sale_sqft,newdata=housing_data)
+rmse(housing_data$sale_price, pre_model1)
+```
+
+### RMSE for Model 2
+```{r}
+library(Metrics)
+pre_model2 <- predict(object=lm_sale_multiple,newdata=housing_data)
+rmse(housing_data$sale_price, pre_model2)
+```
+
+__Findings__ \
+_RMSE is a measure of the average error between the predicted and actual values. A lower RMSE generally indicates a better-fitting model.The RMSE of Model 2 (357262) is lower than the RMSE of Model 1 (401452.5). This indicates that Model 2, which includes additional predictor variables, has a better fit to the data. In other words, Model 2 makes more accurate predictions of the sale price compared to Model 1_
