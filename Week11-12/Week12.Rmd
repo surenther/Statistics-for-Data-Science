@@ -1,0 +1,136 @@
+---
+title: "Week12"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Introduction
+As outlined in the attached research paper (PDF), I am working to address research question using statistical methods in R. Below is the list of steps I plan to follow:
+
+### Import CSV
+```{r}
+# Import CSV
+data <- read.table(file = "ObesityDataSet_raw_and_data_sinthetic.csv", header = TRUE, sep = ",")
+```
+
+### What are the key eating habits that contribute to obesity?
+__Explanation__ \
+_To determine the key eating habits that contribute to obesity, we can analyze the dataset by building a classification model where the target variable (NObeyesdad) represents different obesity levels. We will use logistic regression to identify which eating habits (e.g., FAVC for frequent consumption of high-calorie food, FCVC for frequency of vegetable consumption, NCP for the number of main meals, etc.) contribute the most to predicting obesity levels.Since NObeyesdad has multiple categories, we will use multinomial logistic regression._ \
+
+```{r message=FALSE}
+# Load necessary libraries
+library(nnet,warn.conflicts = FALSE)       # For multinomial logistic regression
+library(dplyr,warn.conflicts = FALSE)      # For data manipulation
+library(caret,warn.conflicts = FALSE)      # For data partitioning and evaluation
+
+# Convert categorical variables to factors
+data$NObeyesdad <- as.factor(data$NObeyesdad)
+data$Gender <- as.factor(data$Gender)
+data$family_history_with_overweight <- as.factor(data$family_history_with_overweight)
+data$FAVC <- as.factor(data$FAVC)
+data$CAEC <- as.factor(data$CAEC)
+data$SMOKE <- as.factor(data$SMOKE)
+data$SCC <- as.factor(data$SCC)
+data$CALC <- as.factor(data$CALC)
+data$MTRANS <- as.factor(data$MTRANS)
+
+# Select only the columns related to eating habits and the target variable
+eating_habits <- data %>%
+  select(NObeyesdad, FAVC, FCVC, NCP, CAEC, CH2O, SCC, FAF, TUE, CALC)
+
+# Split the data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(eating_habits$NObeyesdad, p = 0.8, list = FALSE)
+train_data <- eating_habits[train_index, ]
+test_data <- eating_habits[-train_index, ]
+```
+```{r echo = T, results = 'hide'}
+# Fit the multinomial logistic regression model
+multi_logit_model <- multinom(NObeyesdad ~ ., data = train_data)
+```
+```{r}
+# Display the model summary to view the coefficients
+summary(multi_logit_model)
+```
+__Findings__ \
+_High-Calorie Food Consumption (FAVCyes): Strongly associated with higher obesity levels._ \
+_Vegetable Consumption (FCVC): Inversely related to obesity categories like Obesity_Type_I and Obesity_Type_II._ \
+_Water Consumption (CH2O): Minimal impact based on small coefficients._ \
+_Physical Activity (FAF): Reduces the likelihood of higher obesity levels._ \
+_Alcohol Consumption (CALC): Varies significantly, with strong positive or negative effects depending on the category._ \
+
+```{r}
+# Interpret the significance of each feature using the Z-values and p-values
+z_values <- summary(multi_logit_model)$coefficients / summary(multi_logit_model)$standard.errors
+p_values <- (1 - pnorm(abs(z_values), 0, 1)) * 2
+
+# Combine coefficients, Z-values, and p-values for easier interpretation
+coeff_summary <- data.frame(
+  Feature = rownames(summary(multi_logit_model)$coefficients),
+  Coefficient = as.vector(summary(multi_logit_model)$coefficients),
+  Z_value = as.vector(z_values),
+  P_value = as.vector(p_values)
+)
+```
+```{r}
+print(coeff_summary)
+```
+__Findings__ \
+_Statistically Significant Features:_  \
+  _Features with small P-values (e.g., < 0.05) are statistically significant predictors of obesity levels._ \
+  _For example:_ \
+    _FAVCyes (frequent consumption of high-calorie food) has a significant positive effect on several categories, such as Obesity_Type_I (Z = 3.59, P = 0.00033)._  \
+    _FCVC (frequency of vegetable consumption) has a significant negative effect for Obesity_Type_I (Z = -5.78, P = 7.50e-09)._ \
+    
+_Non-Significant Features:_  \
+   _Features with large P-values (> 0.05) are not significant predictors for certain categories._  \
+  _For example:_  \
+     _CAECSometimes for Obesity_Type_II has a P-value of 0.875, indicating no significant effect._  \
+_Extreme Coefficients:_  \
+    _Some categories, like Obesity_Type_III, have extreme coefficients (e.g., -600 for the intercept or -195 for CALCno), which might indicate outliers or overfitting._ \
+    
+_Effect Directions:_ \
+  _Positive coefficients: Features like CH2O (water consumption) positively influence categories like Obesity_Type_I and Overweight_Level_II._
+  _Negative coefficients: Features like FCVC (vegetable consumption) have a protective effect, reducing the likelihood of being in higher obesity categories._ \
+
+```{r}
+# Make predictions on the test data
+predictions <- predict(multi_logit_model, newdata = test_data)
+
+# Evaluate the accuracy of the model
+conf_matrix <- table(Predicted = predictions, Actual = test_data$NObeyesdad)
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Model accuracy on test data:", round(accuracy * 100, 2), "%"))
+
+# Display the confusion matrix
+print("Confusion Matrix:")
+print(conf_matrix)
+```
+__Findings__
+_Interpretation for Each Category:_ \
+_Insufficient_Weight:_ \
+_Predicted correctly 18 times._ \
+_Misclassified as "Normal_Weight" 13 times, indicating confusion between these two classes._ \
+
+_Normal_Weight:_ \
+_Predicted correctly 8 times._ \
+_Misclassified frequently as "Insufficient_Weight" (5) and "Obesity_Type_I" (12)._ \
+
+_Obesity_Type_I:_ \
+_Predicted correctly 46 times, but often confused with "Obesity_Type_II" (35) and "Normal_Weight" (12)._ \
+
+_Obesity_Type_II:_ \
+_Predicted correctly 12 times, but misclassified as "Obesity_Type_I" (14) and "Overweight_Level_I" (19)._ \
+
+_Obesity_Type_III:_ \
+_Predicted correctly 64 times, showing strong performance for this class._ \
+
+_Overweight_Level_I:_ \
+_Predicted correctly 12 times but often confused with "Obesity_Type_I" (20)._ \
+
+_Overweight_Level_II:_ \
+_Predicted correctly only 9 times, with misclassifications spread across other categories._ \
+

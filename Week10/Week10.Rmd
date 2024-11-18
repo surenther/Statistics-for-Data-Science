@@ -1,0 +1,53 @@
+---
+title: "Week 10 Assingment"
+author: "Surenther"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+### Load ARFF file
+```{r}
+library(foreign)
+myfile <- read.arff("ThoraricSurgery.arff")
+```
+
+### Logistic Regression
+```{r}
+# Convert 'Risk1Yr' to a factor for binary logistic regression
+myfile$Risk1Yr <- factor(myfile$Risk1Yr, levels = c("F", "T"))
+
+# Fit a binary logistic regression model
+mymodel <- glm(Risk1Yr ~ DGN + PRE4 + PRE5 + PRE6 + PRE7 + PRE8 + PRE9 + 
+               PRE10 + PRE11 + PRE14 + PRE17 + PRE19 + PRE25 + PRE30 + 
+               PRE32 + AGE, data = myfile, family = binomial)
+summary(mymodel)
+```
+__Findings__\
+_From the summary, the variables with the most significant effect on survival (Risk1Yr) are:_ \ 
+
+_PRE9T (Dyspnoea before surgery True): This predictor has a coefficient of 1.368 and a p-value of 0.00494, indicating a statistically significant positive impact on survival._\
+
+_PRE14OC14 (clinical TNM Large): With a coefficient of 1.653 and a p-value of 0.00668, this variable also shows a strong positive influence on survival._ \
+
+_PRE17T (Type 2 DM - diabetes mellitus True): This predictor has a coefficient of 0.9266 and a p-value of 0.03709, indicating a positive and statistically significant effect on survival._ \
+
+_PRE30T (Smoking True): This variable has a coefficient of 1.084 and a p-value of 0.02984, suggesting it positively influences survival._\
+    
+_These variables showed the lowest p-values, indicating they are the most influential predictors in the model for determining one-year survival post-surgery._\
+
+### Predict the accuracy
+```{r}
+# Predict probabilities
+predicted_probs <- predict(mymodel, type = "response")
+
+# Convert probabilities to binary predictions with a 0.5 threshold
+predicted_classes <- ifelse(predicted_probs > 0.5, "T", "F")
+
+# Calculate accuracy
+accuracy <- mean(predicted_classes == myfile$Risk1Yr)
+accuracy
+```
+__Findings__\
+_An accuracy of 0.836 (or 83.6%) means that the logistic regression model correctly predicted the survival outcome (Risk1Yr) after surgery for approximately 83.6% of the patients in the dataset. This suggests that the model is reasonably effective at distinguishing between patients who survived one year post-surgery_
